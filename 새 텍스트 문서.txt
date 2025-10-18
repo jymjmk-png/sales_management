@@ -1,0 +1,41 @@
+C:\xampp\htdocs\sales_management\
+│
+├── index.php
+├── config\
+│   ├── constants.php
+│   └── database.php
+│
+├── includes\
+│   ├── header.php
+│   ├── footer.php
+│   ├── navigation.php
+│   └── session.php
+│
+├── classes\
+│   ├── Functions.php         # (BAS 규칙 포팅: VAT/반올림/금액)
+│   └── Numbering.php         # (전표번호 채번)
+│
+├── modules\
+│   ├── auth\
+│   │   ├── login.php         # (선택) 로그인 페이지 (기본 세션만 사용 시 생략 가능)
+│   │   ├── logout.php
+│   │   └── check_auth.php
+│   │
+│   ├── master\
+│   │   ├── material.php      # 자재
+│   │   ├── sales_customer.php# 매출처
+│   │   └── purchase_supplier.php # 매입처
+│   │
+│   └── sales\
+│       ├── order_form.php    # 매출전표입력
+│       └── quote.php         # 견적서 (헤더 중심)
+│
+├── api\
+│   ├── materials.php         # 자재 검색 API
+│   └── customers.php         # 매출처 검색 API
+│
+└── assets\
+    ├── css\
+    │   └── bootstrap.min.css (또는 CDN 사용)
+    └── js\
+        └── bootstrap.bundle.min.js
