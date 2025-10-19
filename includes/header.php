@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/constants.php';
 <head>
   <meta charset="utf-8">
   <title>판매관리 시스템</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
 
   <!-- ✅ CSS 경로 수정 -->
   <link href="<?= BASE_URL ?>/assets/css/bootstrap.min.css" rel="stylesheet">
