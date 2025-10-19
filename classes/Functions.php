@@ -1,4 +1,5 @@
 <?php
+// C:\xampp\htdocs\sales_management\classes\Functions.php
 require_once __DIR__ . '/../config/database.php';
 
 final class Functions
@@ -8,11 +9,11 @@ final class Functions
     static $cache = null;
     if ($cache === null) {
       $cache = [];
-      // 시스템설정 테이블이 없으면 기본값만 사용
       try {
         $stmt = db()->query("SELECT 키, 값 FROM 시스템설정");
         foreach ($stmt as $r) $cache[$r['키']] = $r['값'];
-      } catch (Throwable $e) { /* ignore */
+      } catch (\Throwable $e) {
+        // 시스템설정 테이블이 없으면 기본값 사용
       }
     }
     return $cache[$key] ?? $default;
@@ -23,9 +24,10 @@ final class Functions
     return (float) self::getParam('TAX_RATE', 0.1); // 기본 10%
   }
 
+  /** 반올림 규칙: ROUND|FLOOR|CEIL, scale: 소수 자릿수 */
   public static function r($v, string $what = 'AMT', int $scale = 0): float
   {
-    $mode = strtoupper(self::getParam("ROUND_{$what}", 'ROUND')); // ROUND|FLOOR|CEIL
+    $mode = strtoupper(self::getParam("ROUND_{$what}", 'ROUND'));
     $m = pow(10, $scale);
     $x = (float)$v * $m;
     if ($mode === 'FLOOR') $x = floor($x);
@@ -34,25 +36,26 @@ final class Functions
     return $x / $m;
   }
 
+  /** (수량, 단가, 과세구분) → [공급가, 세액, 총액] */
   public static function splitSupplyTax(float $qty, float $price, int $vatFlag = 1): array
   {
-    $qty  = self::r($qty,  'QTY',   4);
+    $qty   = self::r($qty,   'QTY',   4);
     $price = self::r($price, 'PRICE', 4);
-    $amt  = self::r($qty * $price, 'AMT', 0);
+    $amt   = self::r($qty * $price,   'AMT',   0);
     if ($vatFlag === 0) return [$amt, 0.0, $amt];
-    $rate = self::taxRate();
-    $tax  = self::r($amt * $rate, 'AMT', 0);
+    $tax = self::r($amt * self::taxRate(), 'AMT', 0);
     return [$amt, $tax, $amt + $tax];
   }
 
+  /** 총액 입력형(수량, 총액, 과세구분) → [공급가, 세액, 총액] */
   public static function splitFromGross(float $qty, float $gross, int $vatFlag = 1): array
   {
-    $qty = self::r($qty, 'QTY', 4);
+    $qty   = self::r($qty,   'QTY', 4);
     $gross = self::r($gross, 'AMT', 0);
     if ($vatFlag === 0) return [$gross, 0.0, $gross];
-    $rate = self::taxRate();
-    $supply = self::r($gross / (1 + $rate), 'AMT', 0);
-    $tax = $gross - $supply;
+    $rate    = self::taxRate();
+    $supply  = self::r($gross / (1 + $rate), 'AMT', 0);
+    $tax     = $gross - $supply;
     return [$supply, $tax, $gross];
   }
 }

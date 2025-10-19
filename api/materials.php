@@ -19,8 +19,12 @@ try {
         $p = ["%$q%", "%$q%"];
     }
     $sql .= "ORDER BY 자재명 LIMIT 50";
-    
-    $stmt = db()->prepare($sql);
+
+    // DB 연결
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    $stmt = $conn->prepare($sql);
     $stmt->execute($p);
     echo json_encode([
         'success' => true,

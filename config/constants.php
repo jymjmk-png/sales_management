@@ -1,7 +1,7 @@
 <?php
 // 프로젝트 루트/URL
 define('BASE_PATH', 'C:/xampp/htdocs/sales_management');
-define('BASE_URL',  'http://localhost/sales_management');
+define('BASE_URL',  'http://localhost:8000/sales_management');
 
 // 공통 출력 인코딩
 mb_internal_encoding('UTF-8');
