@@ -2,14 +2,34 @@
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../classes/Functions.php';
+
+// Ensure session is started and CSRF token is set
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 $err = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $id = trim($_POST['id'] ?? '');
-  $pw = trim($_POST['pw'] ?? '');
   try {
+    // CSRF check
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        throw new Exception('Invalid session token. Please try again.');
+    }
+
+    // Input validation
+    $id = trim($_POST['id'] ?? '');
+    $pw = trim($_POST['pw'] ?? '');
+    
     if ($id === '' || $pw === '') throw new Exception('아이디/비밀번호를 입력하세요.');
-    $pdo = db();
+    if (strlen($id) > 50) throw new Exception('아이디는 50자를 초과할 수 없습니다.');
+    if (strlen($pw) > 100) throw new Exception('비밀번호가 너무 깁니다.');
+    
+    $database = new Database();
+    $pdo = $database->getConnection();
     $stmt = $pdo->prepare("SELECT 사용자코드,아이디,비밀번호,이름,권한,사용여부 FROM 사용자 WHERE 아이디=?");
     $stmt->execute([$id]);
     $u = $stmt->fetch();
@@ -58,17 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h5 class="mb-3">판매관리 로그인</h5>
     <?php if ($err): ?><div class="alert alert-danger py-2"><?= htmlspecialchars($err) ?></div><?php endif; ?>
     <form method="post">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
       <div class="mb-2">
         <label class="form-label">아이디</label>
-        <input name="id" class="form-control" autofocus>
+        <input name="id" class="form-control" maxlength="50" autofocus required>
       </div>
       <div class="mb-3">
         <label class="form-label">비밀번호</label>
-        <input type="password" name="pw" class="form-control">
+        <input type="password" name="pw" class="form-control" maxlength="100" required>
       </div>
       <button class="btn btn-primary w-100">로그인</button>
     </form>
-    <div class="text-muted small mt-3">초기 계정: admin / 1234 (시드 스크립트 실행)</div>
+    <div class="text-muted small mt-3">비밀번호를 잊으셨다면 관리자에게 문의하세요.</div>
   </div>
 </body>
 

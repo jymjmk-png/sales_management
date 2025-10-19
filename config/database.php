@@ -4,7 +4,7 @@ class Database
   private $host = "localhost";
   private $db_name = "sales_management";
   private $username = "root";
-  private $password = "";
+  private $password = "1234";
   private $conn;
 
   public function getConnection()

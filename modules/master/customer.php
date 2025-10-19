@@ -101,6 +101,8 @@ include_once "../../includes/navigation.php";
         html = `<tr><td colspan="7" class="text-center py-4 text-gray-500">데이터가 없습니다.</td></tr>`;
       } else {
         $.each(data, function(i, row) {
+          // Convert Korean timestamp to formatted date
+          const updatedAt = new Date(row.updated_at).toLocaleString('ko-KR');
           html += `
           <tr>
             <td class="px-3 py-2 border text-center">${row.id}</td>

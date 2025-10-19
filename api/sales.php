@@ -1,19 +1,22 @@
 <?php
-// C:\xampp\htdocs\sales_management\api\sales.php
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../classes/Functions.php';
-require_once __DIR__ . '/../classes/Numbering.php';
+header("Content-Type: application/json; charset=utf-8");
+require_once "../config/database.php";
+require_once "../classes/Functions.php";
+require_once "../classes/Numbering.php";
 
-header('Content-Type: application/json; charset=utf-8');
+$action = $_REQUEST['action'] ?? '';
+$page = intval($_GET['page'] ?? 1);
+$limit = intval($_GET['limit'] ?? 10);
+$offset = ($page - 1) * $limit;
 
-try {
-  if ($_SERVER['REQUEST_METHOD'] !== 'POST') throw new Exception('POST only');
+$database = new Database();
+$pdo = $database->getConnection();
 
-  $raw = file_get_contents('php://input');
-  $data = json_decode($raw, true);
-  if (!is_array($data)) throw new Exception('Invalid JSON');
-
-  $pdo = db();
+if ($action === 'create') {
+  try {
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true);
+    if (!is_array($data)) throw new Exception('Invalid JSON');
   $pdo->beginTransaction();
 
   $biz = $data['사업장코드'] ?? '01';
@@ -71,10 +74,80 @@ try {
     ]);
   }
 
-  $pdo->commit();
-  echo json_encode(['ok' => true, '전표번호' => $no]);
-} catch (Throwable $e) {
-  if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
-  http_response_code(400);
-  echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+    $pdo->commit();
+    echo json_encode(['message' => '매출전표가 등록되었습니다.', '전표번호' => $no]);
+    exit;
+  } catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    http_response_code(400);
+    echo json_encode(['error' => $e->getMessage()]);
+    exit;
+  }
 }
+
+// 매출전표 목록
+if ($action === 'list') {
+  try {
+    $stmt = $pdo->prepare("SELECT SQL_CALC_FOUND_ROWS 
+                            h.사업장코드, h.전표일자, h.전표번호, h.매출처코드, 
+                            c.상호 as 매출처명, h.합계공급가, h.합계세액, h.합계총액, 
+                            h.작성자코드, h.작성일시 
+                          FROM sales_header h 
+                          LEFT JOIN customer c ON h.매출처코드 = c.거래처코드 
+                          ORDER BY h.전표일자 DESC, h.전표번호 DESC 
+                          LIMIT :offset, :limit");
+    $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+    $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $total = $pdo->query("SELECT FOUND_ROWS() as total")->fetch()['total'];
+    
+    echo json_encode(["data" => $data, "total" => $total]);
+    exit;
+  } catch (Throwable $e) {
+    http_response_code(400);
+    echo json_encode(['error' => $e->getMessage()]);
+    exit;
+  }
+}
+
+// 매출전표 상세조회
+if ($action === 'detail') {
+  try {
+    $biz = $_GET['사업장코드'] ?? '';
+    $date = $_GET['전표일자'] ?? '';
+    $no = $_GET['전표번호'] ?? '';
+    
+    if (!$biz || !$date || !$no) throw new Exception('필수 파라미터가 누락되었습니다.');
+
+    $header = $pdo->prepare("SELECT h.*, c.상호 as 매출처명 
+                            FROM sales_header h 
+                            LEFT JOIN customer c ON h.매출처코드 = c.거래처코드 
+                            WHERE h.사업장코드 = ? AND h.전표일자 = ? AND h.전표번호 = ?");
+    $header->execute([$biz, $date, $no]);
+    $headerData = $header->fetch(PDO::FETCH_ASSOC);
+
+    if (!$headerData) throw new Exception('존재하지 않는 전표입니다.');
+
+    $detail = $pdo->prepare("SELECT * FROM sales_detail 
+                            WHERE 사업장코드 = ? AND 전표일자 = ? AND 전표번호 = ? 
+                            ORDER BY 순번");
+    $detail->execute([$biz, $date, $no]);
+    $detailData = $detail->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode([
+      'header' => $headerData,
+      'detail' => $detailData
+    ]);
+    exit;
+  } catch (Throwable $e) {
+    http_response_code(400);
+    echo json_encode(['error' => $e->getMessage()]);
+    exit;
+  }
+}
+
+// 잘못된 action 처리
+echo json_encode(["error" => "잘못된 요청입니다."]);
+exit;
