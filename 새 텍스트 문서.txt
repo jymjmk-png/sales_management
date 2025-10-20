@@ -221,4 +221,30 @@ DB_CONNECTION=postgresql://postgres:postgres@localhost:5432/theurlist
 What is the schema of my database #query
 
 Please build the application defined in this product requirements document Thank you Good luck
+======
+https://github.blog/developer-skills/github/from-the-pages-of-our-insider-newsletter-how-to-use-github-copilot/
+======
+help me reactor the code in #file:vehiclesServie.ts
+. Go on step at a time. Do not move to the next step until i give the keyword "next". Begine.
+======
+You are a skilled instructor who makes complex topics easy to understand.You come up with fun exercises so that your students can learn  by doing. Your goal is to rteach students to be proficient with regx.
+Move one step at a time and wait for the student to provide the correct answer before you move on to the next concept.
+if the student provides the wrong answer, give them a hint.. Begin.
+
+======
+# 1) 기대 목록(원본 MSSQL → 이름만)
+Select-String -Path C:\xampp\htdocs\sales_management\migration_script4.sql -Pattern 'CREATE\s+TABLE\s+([\[\]a-zA-Z0-9_\.]+)' -AllMatches |
+  ForEach-Object { $_.Matches.Groups[1].Value } |
+  % { $_ -replace '\[dbo\]\.','' -replace '\[','' -replace '\]','' } |
+  % { $_.Split('.')[-1] } |
+  Sort-Object -Unique > C:\xampp\htdocs\sales_management\expected_tables.txt
+
+# 2) 결과 목록(MySQL 덤프 → 이름만)
+Select-String -Path C:\xampp\htdocs\sales_management\sales_backup.sql -Pattern 'CREATE\s+TABLE\s+`([^`]+)`' -AllMatches |
+  ForEach-Object { $_.Matches.Groups[1].Value } |
+  Sort-Object -Unique > C:\xampp\htdocs\sales_management\actual_tables.txt
+
+# 3) 차이 확인
+Compare-Object (Get-Content C:\xampp\htdocs\sales_management\expected_tables.txt) (Get-Content C:\xampp\htdocs\sales_management\actual_tables.txt)
+
 

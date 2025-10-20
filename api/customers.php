@@ -130,7 +130,7 @@ if ($action === "update") {
         $check = $conn->prepare("SELECT " . COL_ID . " FROM " . TABLE_NAME . " WHERE " . COL_ID . " = :id");
         $check->bindParam(":id", $_POST['id']);
         $check->execute();
-        
+
         if (!$check->fetch()) {
             throw new Exception("존재하지 않는 거래처입니다.");
         }
@@ -185,7 +185,7 @@ if ($action === "delete") {
         $check = $conn->prepare("SELECT " . COL_ID . " FROM " . TABLE_NAME . " WHERE " . COL_ID . " = :id");
         $check->bindParam(":id", $_POST['id']);
         $check->execute();
-        
+
         if (!$check->fetch()) {
             throw new Exception("존재하지 않는 거래처입니다.");
         }

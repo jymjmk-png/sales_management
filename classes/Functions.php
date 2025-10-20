@@ -7,13 +7,22 @@ final class Functions
   public static function getParam(string $key, $default = null)
   {
     static $cache = null;
+    // DB 연결
+    $db = new Database();
+    $conn = $db->getConnection();
+    $pdo = $conn;
+    $pdo->beginTransaction();
     if ($cache === null) {
       $cache = [];
       try {
-        $stmt = db()->query("SELECT 키, 값 FROM 시스템설정");
+        $stmt = $pdo->query("SELECT 키, 값 FROM 시스템설정");
         foreach ($stmt as $r) $cache[$r['키']] = $r['값'];
+        $nxt = (int)$stmt->fetchColumn();
+        $pdo->commit();
       } catch (\Throwable $e) {
         // 시스템설정 테이블이 없으면 기본값 사용
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
       }
     }
     return $cache[$key] ?? $default;
